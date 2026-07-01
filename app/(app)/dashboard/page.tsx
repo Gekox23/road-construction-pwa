@@ -9,9 +9,9 @@ interface Stats {
   openIssues: number;
 }
 
-const STAT_CARDS = [
+const STAT_CARDS: { key: keyof Stats; label: string; href: string; icon: React.ReactNode; color: string; bg: string; border: string }[] = [
   {
-    key: 'machines' as keyof Stats,
+    key: 'machines',
     label: 'Gépek',
     href: '/machines',
     icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
@@ -20,7 +20,7 @@ const STAT_CARDS = [
     border: 'border-blue-500/20',
   },
   {
-    key: 'activeSites' as keyof Stats,
+    key: 'activeSites',
     label: 'Aktív építkezés',
     href: '/sites',
     icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
@@ -29,7 +29,7 @@ const STAT_CARDS = [
     border: 'border-emerald-500/20',
   },
   {
-    key: 'openWorkorders' as keyof Stats,
+    key: 'openWorkorders',
     label: 'Nyitott munkalap',
     href: '/workorders',
     icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
@@ -38,7 +38,7 @@ const STAT_CARDS = [
     border: 'border-amber-500/20',
   },
   {
-    key: 'openIssues' as keyof Stats,
+    key: 'openIssues',
     label: 'Nyitott hiba',
     href: '/issues',
     icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
@@ -80,13 +80,13 @@ export default function DashboardPage() {
           <Link
             key={c.key}
             href={c.href}
-            className={`group relative bg-[#111111] border border-[#222222] rounded-2xl p-5 hover:border-[#333333] hover:bg-[#161616] transition-all duration-200 overflow-hidden`}
+            className="group relative bg-[#111111] border border-[#222222] rounded-2xl p-5 hover:border-[#333333] hover:bg-[#161616] transition-all duration-200 overflow-hidden"
           >
             <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${c.bg} border ${c.border} mb-4`}>
               <span className={c.color}>{c.icon}</span>
             </div>
             <p className={`text-3xl font-bold ${c.color} mb-1`}>
-              {stats ? (c.value ?? 0) : <span className="inline-block w-12 h-8 bg-[#222] rounded-lg animate-pulse" />}
+              {stats ? (stats[c.key] ?? 0) : <span className="inline-block w-12 h-8 bg-[#222] rounded-lg animate-pulse" />}
             </p>
             <p className="text-sm text-gray-500">{c.label}</p>
             <div className="absolute top-0 right-0 w-20 h-20 opacity-5 -translate-y-4 translate-x-4">
