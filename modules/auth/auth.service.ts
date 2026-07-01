@@ -9,9 +9,17 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY = '30d';
 
+interface UserRow {
+  id: string;
+  email: string;
+  name: string;
+  password_hash: string;
+  active: boolean;
+}
+
 export async function loginUser(email: string, password: string): Promise<{ user: SessionUser; accessToken: string; refreshToken: string } | null> {
   try {
-    const result = await db.query(
+    const result = await db.query<UserRow>(
       'SELECT id, email, name, password_hash, active FROM users WHERE email = $1',
       [email.toLowerCase().trim()]
     );
@@ -23,11 +31,11 @@ export async function loginUser(email: string, password: string): Promise<{ user
 
     await db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
-    const permsResult = await db.query(
+    const permsResult = await db.query<{ permission_key: string }>(
       'SELECT permission_key FROM user_permissions WHERE user_id = $1 AND granted = TRUE',
       [user.id]
     );
-    const permissions = permsResult.rows.map((r: { permission_key: string }) => r.permission_key) as Permission[];
+    const permissions = permsResult.rows.map((r) => r.permission_key) as Permission[];
 
     const sessionUser: SessionUser = {
       id: user.id,
