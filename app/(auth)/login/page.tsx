@@ -20,87 +20,101 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Hibás bejelentkezés');
-      } else {
-        router.push('/dashboard');
-      }
+      if (!res.ok) setError(data.error || 'Hibás bejelentkezés');
+      else router.push('/dashboard');
     } catch {
-      setError('Kapcsolódási hiba. Kérlek próbáld újra.');
+      setError('Kapcsolódási hiba.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-[#0f0f0f] flex">
+      {/* Left panel – branding */}
+      <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] bg-[#0a0a0a] border-r border-[#1e1e1e] flex-col p-10 relative overflow-hidden flex-shrink-0">
+        {/* Subtle grid bg */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)',
+          backgroundSize: '40px 40px'
+        }} />
+        {/* Red glow */}
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-red-600/10 rounded-full blur-[100px]" />
 
-      <div className="w-full max-w-sm relative z-10">
-        {/* Brand */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-600 mb-5 shadow-[0_0_30px_rgba(220,38,38,0.5)]">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        <div className="relative z-10 flex items-center gap-2.5 mb-auto">
+          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Vezénylő</h1>
-          <p className="text-gray-500 text-sm mt-1.5">Útépítés · Mélyépítés · Irányítás</p>
+          <span className="text-white font-semibold text-[15px]">Vezénylő</span>
         </div>
 
-        {/* Card */}
-        <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-          <form onSubmit={handleLogin} className="space-y-5">
+        <div className="relative z-10 mb-10">
+          <h2 className="text-3xl font-bold text-white mb-3 leading-snug">Útépítés &amp; Mélyépítés<br />Irányító Rendszer</h2>
+          <p className="text-[#666] text-sm leading-relaxed">Gépek, heti vezénylés, munkalapok, hiba&shy;bejelentések és raktarkészlet — egy helyen kezelve.</p>
+        </div>
+
+        {/* Feature pills */}
+        <div className="relative z-10 flex flex-wrap gap-2">
+          {['Géppark kezelés', 'Heti vezénylés', 'Munkalapok', 'Polcrendszer', 'Hiba&shy;bejelentés', 'Megrendelések'].map(f => (
+            <span key={f} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-xs" dangerouslySetInnerHTML={{__html: f}} />
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel – form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-[360px]">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 mb-8 lg:hidden">
+            <div className="w-7 h-7 bg-red-600 rounded-md flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <span className="text-white font-semibold">Vezénylő</span>
+          </div>
+
+          <h1 className="text-2xl font-bold text-white mb-1">Bejelentkezés</h1>
+          <p className="text-[#666] text-sm mb-7">Add meg az adataidat a folytatáshoz</p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
+              <label className="block text-xs font-medium text-[#888] mb-1.5">Email cím</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-                className="w-full h-12 px-4 rounded-xl bg-[#1A1A1A] border border-[#2E2E2E] text-white placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
+                type="email" value={email} onChange={e => setEmail(e.target.value)}
+                autoComplete="email" required
+                className="input"
                 placeholder="nev@ceg.hu"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Jelszó</label>
+              <label className="block text-xs font-medium text-[#888] mb-1.5">Jelszó</label>
               <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                className="w-full h-12 px-4 rounded-xl bg-[#1A1A1A] border border-[#2E2E2E] text-white placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
+                type="password" value={password} onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password" required
+                className="input"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="flex items-start gap-3 bg-red-950/40 border border-red-800/40 rounded-xl px-4 py-3">
-                <svg className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="flex items-center gap-2 bg-red-950/40 border border-red-800/40 rounded-lg px-3 py-2.5">
+                <svg className="w-3.5 h-3.5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <p className="text-red-300 text-sm">{error}</p>
+                <span className="text-red-300 text-xs">{error}</span>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-50 text-white font-semibold rounded-xl transition-all duration-150 shadow-[0_4px_14px_rgba(220,38,38,0.4)] flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Belépés...</>
-              ) : 'Belépés'}
+            <button type="submit" disabled={loading} className="btn-primary w-full h-10 mt-1">
+              {loading
+                ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Belépés...</>
+                : 'Belépés'}
             </button>
           </form>
         </div>
-
-        <p className="text-center text-gray-700 text-xs mt-6">
-          Vezénylő Rendszer &copy; {new Date().getFullYear()}
-        </p>
       </div>
     </div>
   );
