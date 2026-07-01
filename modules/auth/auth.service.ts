@@ -37,14 +37,31 @@ export async function loginUser(email: string, password: string): Promise<{ user
     );
     const permissions = permsResult.rows.map((r) => r.permission_key) as Permission[];
 
+    // Superuser kap minden jogosultságot
+    const isSuperuser = isSuperUser(user.email);
+    const allPerms: Permission[] = isSuperuser
+      ? [
+          'schedule.view', 'schedule.edit',
+          'machine.view', 'machine.edit',
+          'shelf.view', 'shelf.edit',
+          'site.view', 'site.edit',
+          'workorder.view', 'workorder.edit',
+          'issue.view', 'issue.edit',
+          'order.view', 'order.edit',
+          'finance.view', 'finance.edit',
+          'user.view', 'user.edit',
+        ] as Permission[]
+      : permissions;
+
     const sessionUser: SessionUser = {
       id: user.id,
       email: user.email,
       name: user.name,
-      permissions,
+      permissions: allPerms,
     };
 
-    const accessToken = signAccessToken({ sub: user.id, email: user.email });
+    // FIX: permissions benne van a JWT payloadban
+    const accessToken = signAccessToken({ sub: user.id, email: user.email, name: user.name, permissions: allPerms });
     const refreshToken = jwt.sign({ sub: user.id, email: user.email }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
 
     return { user: sessionUser, accessToken, refreshToken };
@@ -54,13 +71,19 @@ export async function loginUser(email: string, password: string): Promise<{ user
   }
 }
 
-export function signAccessToken(payload: { sub: string; email: string }): string {
+export function signAccessToken(payload: { sub: string; email: string; name?: string; permissions?: Permission[] }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
 }
 
 export function verifyToken(token: string): SessionUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as SessionUser;
+    const decoded = jwt.verify(token, JWT_SECRET) as { sub: string; email: string; name: string; permissions?: Permission[] };
+    return {
+      id: decoded.sub,
+      email: decoded.email,
+      name: decoded.name ?? '',
+      permissions: decoded.permissions ?? [],
+    };
   } catch {
     return null;
   }
