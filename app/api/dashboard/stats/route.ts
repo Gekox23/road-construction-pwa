@@ -14,10 +14,10 @@ export async function GET(req: NextRequest) {
     ]);
     return NextResponse.json({
       data: {
-        machines: parseInt(machines.rows[0].count),
-        activeSites: parseInt(sites.rows[0].count),
-        openWorkorders: parseInt(workorders.rows[0].count),
-        openIssues: parseInt(issues.rows[0].count),
+        machines: parseInt(String(machines.rows[0].count), 10),
+        activeSites: parseInt(String(sites.rows[0].count), 10),
+        openWorkorders: parseInt(String(workorders.rows[0].count), 10),
+        openIssues: parseInt(String(issues.rows[0].count), 10),
       },
     });
   } catch (err) {
