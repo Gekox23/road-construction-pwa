@@ -33,58 +33,74 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500 mb-4">
+    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="w-full max-w-sm relative z-10">
+        {/* Brand */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-600 mb-5 shadow-[0_0_30px_rgba(220,38,38,0.5)]">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">Vezénylő Rendszer</h1>
-          <p className="text-gray-400 text-sm mt-1">Útbuildés • Mélyépítés</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Vezénylő</h1>
+          <p className="text-gray-500 text-sm mt-1.5">Útépítés · Mélyépítés · Irányítás</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-              className="w-full h-12 px-4 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="nev@ceg.hu"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Jelszó</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-              className="w-full h-12 px-4 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-900/40 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm">
-              {error}
+        {/* Card */}
+        <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+                className="w-full h-12 px-4 rounded-xl bg-[#1A1A1A] border border-[#2E2E2E] text-white placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
+                placeholder="nev@ceg.hu"
+              />
             </div>
-          )}
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Jelszó</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                className="w-full h-12 px-4 rounded-xl bg-[#1A1A1A] border border-[#2E2E2E] text-white placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
+                placeholder="••••••••"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/50 text-white font-semibold rounded-xl transition-colors"
-          >
-            {loading ? 'Bejelentkezés...' : 'Belépés'}
-          </button>
-        </form>
+            {error && (
+              <div className="flex items-start gap-3 bg-red-950/40 border border-red-800/40 rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-50 text-white font-semibold rounded-xl transition-all duration-150 shadow-[0_4px_14px_rgba(220,38,38,0.4)] flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Belépés...</>
+              ) : 'Belépés'}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-gray-700 text-xs mt-6">
+          Vezénylő Rendszer &copy; {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   );
