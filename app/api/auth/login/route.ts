@@ -14,13 +14,23 @@ export async function POST(req: NextRequest) {
     }
 
     const response = NextResponse.json({ user: result.user, message: 'Sikeres bejelentkezés' });
-    response.cookies.set('auth_token', result.token, {
+
+    response.cookies.set('access_token', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: 60 * 15,
       path: '/',
     });
+
+    response.cookies.set('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/',
+    });
+
     return response;
   } catch (err) {
     console.error('[auth.login] Hiba:', err);
