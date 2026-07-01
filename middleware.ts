@@ -1,18 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from './modules/auth/auth.service';
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login'];
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next();
-  if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
+async function verifyJWT(token: string, secret: string): Promise<boolean> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const data = encoder.encode(`${parts[0]}.${parts[1]}`);
+    const signature = Uint8Array.from(
+      atob(parts[2].replace(/-/g, '+').replace(/_/g, '/')),
+      (c) => c.charCodeAt(0)
+    );
+
+    const valid = await crypto.subtle.verify('HMAC', cryptoKey, signature, data);
+    if (!valid) return false;
+
+    // Lejárat ellenőrzés
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload.exp && Date.now() / 1000 > payload.exp) return false;
+
+    return true;
+  } catch {
+    return false;
   }
+}
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next();
+  if (pathname.startsWith('/api/')) return NextResponse.next();
+
   const token = req.cookies.get('auth_token')?.value;
-  if (!token || !verifyToken(token)) {
+  const secret = process.env.JWT_SECRET ?? '';
+
+  if (!token || !secret || !(await verifyJWT(token, secret))) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
+
   return NextResponse.next();
 }
 
