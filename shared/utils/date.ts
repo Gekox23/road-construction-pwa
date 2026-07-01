@@ -1,29 +1,23 @@
-// KRITIKUS: minden lista event_date szerint rendez, NEM created_at
-import { format, parseISO, startOfWeek, addWeeks, isValid } from 'date-fns';
-import { hu } from 'date-fns/locale';
+export function formatDate(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
 
 export function todayISO(): string {
-  return format(new Date(), 'yyyy-MM-dd');
+  return new Date().toISOString().split('T')[0];
 }
 
-export function formatDisplayDate(dateStr: string): string {
-  if (!dateStr) return '';
-  const parsed = parseISO(dateStr);
-  if (!isValid(parsed)) return dateStr;
-  return format(parsed, 'yyyy. MMM d.', { locale: hu });
+export function getWeekStart(date: Date = new Date()): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
-export function getWeekStart(dateStr?: string): string {
-  const base = dateStr ? parseISO(dateStr) : new Date();
-  const monday = startOfWeek(base, { weekStartsOn: 1 });
-  return format(monday, 'yyyy-MM-dd');
-}
-
-export function getNextWeekStart(dateStr?: string): string {
-  return format(addWeeks(parseISO(getWeekStart(dateStr)), 1), 'yyyy-MM-dd');
-}
-
-export function isValidDateString(s: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  return isValid(parseISO(s));
+export function getNextWeekStart(): Date {
+  const next = getWeekStart();
+  next.setDate(next.getDate() + 7);
+  return next;
 }
