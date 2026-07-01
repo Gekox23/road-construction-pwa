@@ -1,8 +1,9 @@
 import db from '../../shared/db/client';
 import { writeAuditLog } from '../../shared/utils/audit';
 import type { WorkOrder } from '../../shared/types';
+import type { WorkOrderRow } from '../../shared/types/db-rows';
 
-export async function listWorkorders(filters: { machineId?: string; status?: string; dateFrom?: string; dateTo?: string }) {
+export async function listWorkorders(filters: { machineId?: string; status?: string; dateFrom?: string; dateTo?: string }): Promise<WorkOrderRow[]> {
   try {
     let query = `SELECT w.*, m.type as machine_type, m.machine_code, u.name as assigned_name
                  FROM workorders w
@@ -16,7 +17,7 @@ export async function listWorkorders(filters: { machineId?: string; status?: str
     if (filters.dateFrom) { query += ` AND w.event_date >= $${i++}`; params.push(filters.dateFrom); }
     if (filters.dateTo) { query += ` AND w.event_date <= $${i++}`; params.push(filters.dateTo); }
     query += ' ORDER BY w.event_date DESC LIMIT 200';
-    const res = await db.query(query, params);
+    const res = await db.query<WorkOrderRow>(query, params);
     return res.rows;
   } catch (err) {
     console.error('[workorders.listWorkorders] Hiba:', err);
@@ -24,9 +25,9 @@ export async function listWorkorders(filters: { machineId?: string; status?: str
   }
 }
 
-export async function createWorkorder(data: Partial<WorkOrder>, userId: string) {
+export async function createWorkorder(data: Partial<WorkOrder>, userId: string): Promise<WorkOrderRow> {
   try {
-    const res = await db.query(
+    const res = await db.query<WorkOrderRow>(
       `INSERT INTO workorders (machine_id, issue_id, work_type, description, event_date, status, assigned_to, created_by)
        VALUES ($1, $2, $3, $4, $5, 'uj', $6, $7) RETURNING *`,
       [data.machineId || null, data.issueId || null, data.workType || null, data.description || null, data.eventDate, data.assignedTo || userId, userId]
@@ -39,9 +40,9 @@ export async function createWorkorder(data: Partial<WorkOrder>, userId: string) 
   }
 }
 
-export async function updateWorkorderStatus(id: string, status: string, userId: string) {
+export async function updateWorkorderStatus(id: string, status: string, userId: string): Promise<WorkOrderRow> {
   try {
-    const res = await db.query(
+    const res = await db.query<WorkOrderRow>(
       `UPDATE workorders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
       [status, id]
     );

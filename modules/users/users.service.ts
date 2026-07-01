@@ -3,10 +3,11 @@ import bcrypt from 'bcryptjs';
 import { writeAuditLog } from '../../shared/utils/audit';
 import { isSuperUser } from '../auth/auth.service';
 import type { Permission } from '../../shared/types';
+import type { UserRow, UserPermissionRow, PermissionTemplateRow } from '../../shared/types/db-rows';
 
-export async function listUsers() {
+export async function listUsers(): Promise<UserRow[]> {
   try {
-    const res = await db.query(
+    const res = await db.query<UserRow>(
       `SELECT id, email, name, active, last_login_at, created_at FROM users ORDER BY name`
     );
     return res.rows;
@@ -19,8 +20,8 @@ export async function listUsers() {
 export async function getUserWithPermissions(id: string) {
   try {
     const [user, perms] = await Promise.all([
-      db.query('SELECT id, email, name, active, last_login_at FROM users WHERE id = $1', [id]),
-      db.query('SELECT permission_key, granted FROM user_permissions WHERE user_id = $1', [id]),
+      db.query<UserRow>('SELECT id, email, name, active, last_login_at FROM users WHERE id = $1', [id]),
+      db.query<UserPermissionRow>('SELECT permission_key, granted FROM user_permissions WHERE user_id = $1', [id]),
     ]);
     return { ...user.rows[0], permissions: perms.rows };
   } catch (err) {
@@ -29,10 +30,10 @@ export async function getUserWithPermissions(id: string) {
   }
 }
 
-export async function createUser(data: { email: string; name: string; password: string; templateName?: string }, actorId: string) {
+export async function createUser(data: { email: string; name: string; password: string; templateName?: string }, actorId: string): Promise<UserRow> {
   try {
     const hash = await bcrypt.hash(data.password, 12);
-    const res = await db.query(
+    const res = await db.query<UserRow>(
       `INSERT INTO users (email, name, password_hash, active, must_change_password)
        VALUES ($1, $2, $3, TRUE, TRUE) RETURNING id, email, name`,
       [data.email.toLowerCase().trim(), data.name, hash]
@@ -40,7 +41,7 @@ export async function createUser(data: { email: string; name: string; password: 
     const userId = res.rows[0].id;
 
     if (data.templateName) {
-      const tpl = await db.query('SELECT permissions FROM permission_templates WHERE name = $1', [data.templateName]);
+      const tpl = await db.query<PermissionTemplateRow>('SELECT permissions FROM permission_templates WHERE name = $1', [data.templateName]);
       if (tpl.rows[0]) {
         for (const perm of tpl.rows[0].permissions as Permission[]) {
           await db.query(
@@ -59,9 +60,9 @@ export async function createUser(data: { email: string; name: string; password: 
   }
 }
 
-export async function setPermission(targetUserId: string, permissionKey: Permission, granted: boolean, actorId: string) {
+export async function setPermission(targetUserId: string, permissionKey: Permission, granted: boolean, actorId: string): Promise<void> {
   try {
-    const targetUser = await db.query('SELECT email FROM users WHERE id = $1', [targetUserId]);
+    const targetUser = await db.query<UserRow>('SELECT email FROM users WHERE id = $1', [targetUserId]);
     if (targetUser.rows[0] && isSuperUser(targetUser.rows[0].email)) {
       throw new Error('[users.setPermission] Superuser jogosultságai nem módosíthatók');
     }
@@ -78,7 +79,7 @@ export async function setPermission(targetUserId: string, permissionKey: Permiss
   }
 }
 
-export async function listTemplates() {
-  const res = await db.query('SELECT * FROM permission_templates ORDER BY name');
+export async function listTemplates(): Promise<PermissionTemplateRow[]> {
+  const res = await db.query<PermissionTemplateRow>('SELECT * FROM permission_templates ORDER BY name');
   return res.rows;
 }

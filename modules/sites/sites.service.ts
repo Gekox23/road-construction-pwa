@@ -1,9 +1,10 @@
 import db from '../../shared/db/client';
 import { writeAuditLog } from '../../shared/utils/audit';
+import type { SiteRow } from '../../shared/types/db-rows';
 
-export async function listAllSites() {
+export async function listAllSites(): Promise<SiteRow[]> {
   try {
-    const res = await db.query(
+    const res = await db.query<SiteRow>(
       `SELECT s.*, u.name as leader_name,
         COUNT(DISTINCT sm.machine_id) FILTER (WHERE sm.removed_at IS NULL) as machine_count
        FROM sites s
@@ -19,9 +20,9 @@ export async function listAllSites() {
   }
 }
 
-export async function listOwnSites(userId: string) {
+export async function listOwnSites(userId: string): Promise<SiteRow[]> {
   try {
-    const res = await db.query(
+    const res = await db.query<SiteRow>(
       `SELECT s.*, u.name as leader_name,
         COUNT(DISTINCT sm.machine_id) FILTER (WHERE sm.removed_at IS NULL) as machine_count
        FROM sites s
@@ -39,9 +40,9 @@ export async function listOwnSites(userId: string) {
   }
 }
 
-export async function createSite(data: { name: string; location?: string; leaderId?: string }, userId: string) {
+export async function createSite(data: { name: string; location?: string; leaderId?: string }, userId: string): Promise<SiteRow> {
   try {
-    const res = await db.query(
+    const res = await db.query<SiteRow>(
       'INSERT INTO sites (name, location, leader_id) VALUES ($1, $2, $3) RETURNING *',
       [data.name, data.location || null, data.leaderId || null]
     );

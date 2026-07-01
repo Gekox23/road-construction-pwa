@@ -1,9 +1,10 @@
 import db from '../../shared/db/client';
 import type { ScheduleEntry } from '../../shared/types';
+import type { ScheduleEntryRow } from '../../shared/types/db-rows';
 
-export async function getScheduleForWeek(weekStart: string) {
+export async function getScheduleForWeek(weekStart: string): Promise<ScheduleEntryRow[]> {
   try {
-    const res = await db.query(
+    const res = await db.query<ScheduleEntryRow>(
       `SELECT se.*,
         s.name as site_name, s.location as site_location,
         m.machine_code, m.type as machine_type,
@@ -23,9 +24,9 @@ export async function getScheduleForWeek(weekStart: string) {
   }
 }
 
-export async function upsertScheduleEntry(data: Partial<ScheduleEntry>, userId: string) {
+export async function upsertScheduleEntry(data: Partial<ScheduleEntry>, userId: string): Promise<ScheduleEntryRow | undefined> {
   try {
-    const res = await db.query(
+    const res = await db.query<ScheduleEntryRow>(
       `INSERT INTO schedule_entries (week_start, site_id, machine_id, operator_id, day_of_week, notes, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT DO NOTHING RETURNING *`,
@@ -38,7 +39,7 @@ export async function upsertScheduleEntry(data: Partial<ScheduleEntry>, userId: 
   }
 }
 
-export async function deleteScheduleEntry(id: string) {
+export async function deleteScheduleEntry(id: string): Promise<void> {
   try {
     await db.query('DELETE FROM schedule_entries WHERE id = $1', [id]);
   } catch (err) {

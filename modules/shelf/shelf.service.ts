@@ -1,13 +1,13 @@
 import db from '../../shared/db/client';
 import { writeAuditLog } from '../../shared/utils/audit';
-import type { ShelfItem } from '../../shared/types';
+import type { ShelfItemRow } from '../../shared/types/db-rows';
 
-export async function listShelfItems(search?: string) {
+export async function listShelfItems(search?: string): Promise<ShelfItemRow[]> {
   try {
     const q = search
       ? `SELECT si.*, u.name as holder_name FROM shelf_items si LEFT JOIN users u ON si.current_holder_id = u.id WHERE si.status != 'archivalt' AND si.name ILIKE $1 ORDER BY si.name`
       : `SELECT si.*, u.name as holder_name FROM shelf_items si LEFT JOIN users u ON si.current_holder_id = u.id WHERE si.status != 'archivalt' ORDER BY si.name`;
-    const res = await db.query(q, search ? [`%${search}%`] : []);
+    const res = await db.query<ShelfItemRow>(q, search ? [`%${search}%`] : []);
     return res.rows;
   } catch (err) {
     console.error('[shelf.listShelfItems] Hiba:', err);
@@ -15,9 +15,9 @@ export async function listShelfItems(search?: string) {
   }
 }
 
-export async function scanOut(qrCode: string, userId: string) {
+export async function scanOut(qrCode: string, userId: string): Promise<ShelfItemRow> {
   try {
-    const item = await db.query('SELECT * FROM shelf_items WHERE qr_code = $1', [qrCode]);
+    const item = await db.query<ShelfItemRow>('SELECT * FROM shelf_items WHERE qr_code = $1', [qrCode]);
     if (!item.rows[0]) throw new Error(`[shelf.scan_out] QR azonosító nem található: ${qrCode}`);
     if (item.rows[0].status === 'kiveve') throw new Error(`[shelf.scan_out] Már kivett eszköz: ${qrCode}`);
 
@@ -38,9 +38,9 @@ export async function scanOut(qrCode: string, userId: string) {
   }
 }
 
-export async function scanIn(qrCode: string, userId: string, quantityUsedPercent?: number) {
+export async function scanIn(qrCode: string, userId: string, quantityUsedPercent?: number): Promise<ShelfItemRow> {
   try {
-    const item = await db.query('SELECT * FROM shelf_items WHERE qr_code = $1', [qrCode]);
+    const item = await db.query<ShelfItemRow>('SELECT * FROM shelf_items WHERE qr_code = $1', [qrCode]);
     if (!item.rows[0]) throw new Error(`[shelf.scan_in] QR azonosító nem található: ${qrCode}`);
 
     const before = item.rows[0].quantity_percent ?? 100;
