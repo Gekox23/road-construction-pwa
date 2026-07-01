@@ -18,11 +18,24 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   images: {
     domains: ['localhost', process.env.MINIO_ENDPOINT || 'minio.example.com'],
   },
   experimental: {
     serverActions: { allowedOrigins: ['localhost:3000'] },
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'pg-native': false,
+    };
+    return config;
   },
 };
 

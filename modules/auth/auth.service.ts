@@ -5,7 +5,11 @@ import type { SessionUser, Permission } from '../../shared/types';
 
 const SUPERUSER_EMAIL = 'gekox1111@gmail.com';
 
-export async function loginUser(email: string, password: string): Promise<{ user: SessionUser; token: string } | null> {
+const JWT_SECRET = process.env.JWT_SECRET!;
+const ACCESS_TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY = '30d';
+
+export async function loginUser(email: string, password: string): Promise<{ user: SessionUser; accessToken: string; refreshToken: string } | null> {
   try {
     const result = await db.query(
       'SELECT id, email, name, password_hash, active FROM users WHERE email = $1',
@@ -23,7 +27,7 @@ export async function loginUser(email: string, password: string): Promise<{ user
       'SELECT permission_key FROM user_permissions WHERE user_id = $1 AND granted = TRUE',
       [user.id]
     );
-    const permissions = permsResult.rows.map((r) => r.permission_key) as Permission[];
+    const permissions = permsResult.rows.map((r: { permission_key: string }) => r.permission_key) as Permission[];
 
     const sessionUser: SessionUser = {
       id: user.id,
@@ -32,17 +36,31 @@ export async function loginUser(email: string, password: string): Promise<{ user
       permissions,
     };
 
-    const token = jwt.sign(sessionUser, process.env.JWT_SECRET!, { expiresIn: '365d' });
-    return { user: sessionUser, token };
+    const accessToken = signAccessToken({ sub: user.id, email: user.email });
+    const refreshToken = jwt.sign({ sub: user.id, email: user.email }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+
+    return { user: sessionUser, accessToken, refreshToken };
   } catch (err) {
     console.error('[auth.loginUser] Hiba:', err);
     return null;
   }
 }
 
+export function signAccessToken(payload: { sub: string; email: string }): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+}
+
 export function verifyToken(token: string): SessionUser | null {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET!) as SessionUser;
+    return jwt.verify(token, JWT_SECRET) as SessionUser;
+  } catch {
+    return null;
+  }
+}
+
+export function verifyRefreshToken(token: string): { sub: string; email: string } | null {
+  try {
+    return jwt.verify(token, JWT_SECRET) as { sub: string; email: string };
   } catch {
     return null;
   }
