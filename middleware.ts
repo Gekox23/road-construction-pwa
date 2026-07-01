@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login'];
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/refresh'];
 
 async function verifyJWT(token: string, secret: string): Promise<boolean> {
   try {
@@ -26,7 +26,6 @@ async function verifyJWT(token: string, secret: string): Promise<boolean> {
     const valid = await crypto.subtle.verify('HMAC', cryptoKey, signature, data);
     if (!valid) return false;
 
-    // Lejárat ellenőrzés
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
     if (payload.exp && Date.now() / 1000 > payload.exp) return false;
 
@@ -42,7 +41,8 @@ export async function middleware(req: NextRequest) {
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next();
   if (pathname.startsWith('/api/')) return NextResponse.next();
 
-  const token = req.cookies.get('auth_token')?.value;
+  // FIX: cookie neve 'access_token' (nem 'auth_token')
+  const token = req.cookies.get('access_token')?.value;
   const secret = process.env.JWT_SECRET ?? '';
 
   if (!token || !secret || !(await verifyJWT(token, secret))) {
