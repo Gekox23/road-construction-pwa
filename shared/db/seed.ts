@@ -1,111 +1,55 @@
-import db from './client';
+/**
+ * Superuser seed script
+ * Futtatás: npx ts-node shared/db/seed.ts
+ * Vagy Supabase SQL Editorban futtasd a shared/db/seed.sql fájlt
+ */
 import bcrypt from 'bcryptjs';
-
-const ALL_PERMISSIONS = [
-  'user.view','user.create','user.edit','user.delete','user.permission_grant',
-  'machine.view','machine.create','machine.edit','machine.delete',
-  'machine.transfer','machine.fuel_log','machine.hour_log',
-  'site.view','site.view_own','site.create','site.edit','site.delete',
-  'site.assign_machine','site.assign_leader','site.log_own',
-  'order.view','order.create','order.approve','order.edit',
-  'schedule.view','schedule.edit',
-  'workorder.view','workorder.create','workorder.edit','workorder.edit_any','workorder.close',
-  'issue.view','issue.create','issue.resolve',
-  'shelf.view','shelf.scan_out','shelf.scan_in','shelf.manage','shelf.export',
-  'finance.view','finance.export',
-  'notification.receive_service','notification.receive_order','notification.receive_issue',
-  'audit.view',
-];
-
-const TEMPLATES = [
-  {
-    name: 'Építésvezető',
-    permissions: [
-      'order.create','order.view','site.view_own','schedule.view',
-      'machine.view','machine.hour_log','machine.fuel_log','site.log_own',
-      'issue.create','issue.view','workorder.view','notification.receive_order',
-    ],
-  },
-  {
-    name: 'Logisztikus',
-    permissions: [
-      'order.view','order.approve','order.edit','site.view','site.create',
-      'site.edit','site.assign_machine','site.assign_leader','machine.view',
-      'machine.create','machine.edit','machine.transfer','machine.hour_log',
-      'machine.fuel_log','schedule.view','schedule.edit','shelf.view','shelf.export',
-      'notification.receive_order','notification.receive_issue',
-    ],
-  },
-  {
-    name: 'Szervizes',
-    permissions: [
-      'machine.view','machine.hour_log','site.view','workorder.view',
-      'workorder.create','workorder.edit','workorder.close','issue.view',
-      'issue.create','issue.resolve','shelf.view','shelf.scan_out',
-      'shelf.scan_in','schedule.view','notification.receive_service','notification.receive_issue',
-    ],
-  },
-  {
-    name: 'Gazdasági',
-    permissions: [
-      'site.view','machine.view','order.view','schedule.view',
-      'workorder.view','finance.view','finance.export','shelf.view',
-    ],
-  },
-  {
-    name: 'Teljes hozzáférés',
-    permissions: ALL_PERMISSIONS,
-  },
-];
+import db from './client';
 
 async function seed() {
-  console.log('[seed] Indítás...');
+  const email = 'gekox1111@gmail.com';
+  const name = 'Admin (Gekox)';
+  const password = process.env.SUPERUSER_PASSWORD || 'Admin2026!';
 
-  // Sablonok
-  for (const tpl of TEMPLATES) {
-    await db.query(
-      `INSERT INTO permission_templates (name, permissions)
-       VALUES ($1, $2)
-       ON CONFLICT (name) DO UPDATE SET permissions = $2`,
-      [tpl.name, tpl.permissions]
-    );
-  }
-  console.log('[seed] Sablonok betöltve.');
+  const hash = await bcrypt.hash(password, 12);
 
-  // Superuser
-  const superEmail = 'gekox1111@gmail.com';
-  const hash = await bcrypt.hash(process.env.SUPERUSER_PASSWORD || 'changeme123!', 12);
+  await db.query(
+    `INSERT INTO users (email, name, password_hash, active, must_change_password)
+     VALUES ($1, $2, $3, TRUE, FALSE)
+     ON CONFLICT (email) DO UPDATE SET password_hash = $3, active = TRUE`,
+    [email, name, hash]
+  );
 
-  const existing = await db.query('SELECT id FROM users WHERE email = $1', [superEmail]);
-  let superUserId: string;
+  const user = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+  const userId = user.rows[0].id;
 
-  if (existing.rows.length === 0) {
-    const res = await db.query(
-      `INSERT INTO users (email, name, password_hash, active)
-       VALUES ($1, $2, $3, TRUE) RETURNING id`,
-      [superEmail, 'Daniell (Admin)', hash]
-    );
-    superUserId = res.rows[0].id;
-    console.log('[seed] Superuser létrehozva.');
-  } else {
-    superUserId = existing.rows[0].id;
-    console.log('[seed] Superuser már létezik.');
-  }
+  const allPerms = [
+    'schedule.view','schedule.edit',
+    'machine.view','machine.create','machine.edit','machine.hour_log','machine.fuel_log',
+    'site.view','site.view_own','site.create','site.edit',
+    'workorder.view','workorder.create','workorder.edit',
+    'issue.view','issue.create','issue.resolve',
+    'order.view','order.create','order.approve',
+    'shelf.view','shelf.scan_out','shelf.scan_in','shelf.manage',
+    'finance.view',
+    'user.view','user.create','user.edit','user.permission_grant',
+  ];
 
-  // Minden jog TRUE
-  for (const perm of ALL_PERMISSIONS) {
+  for (const perm of allPerms) {
     await db.query(
       `INSERT INTO user_permissions (user_id, permission_key, granted)
        VALUES ($1, $2, TRUE)
-       ON CONFLICT (user_id, permission_key) DO UPDATE SET granted = TRUE`,
-      [superUserId, perm]
+       ON CONFLICT (user_id, permission_key) DO NOTHING`,
+      [userId, perm]
     );
   }
-  console.log('[seed] Superuser jogosultságok beállítva.');
+
+  console.log(`✅ Superuser létrehozva: ${email}`);
+  console.log(`✅ ${allPerms.length} jogosultság beállítva`);
   process.exit(0);
 }
 
-seed().catch((e) => {
-  console.error('[seed] HIBA:', e);
+seed().catch((err) => {
+  console.error('Seed hiba:', err);
   process.exit(1);
 });
