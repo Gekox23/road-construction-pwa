@@ -6,18 +6,20 @@ export const metadata: Metadata = {
   description: 'Útépítés – mélyépítés irányító rendszer',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
+  icons: { icon: '/favicon.ico', apple: '/icons/icon-192.png' },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0f0f0f',
+  themeColor: '#141312',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="hu" className="dark">
+    <html lang="hu">
       <body>{children}</body>
     </html>
   );

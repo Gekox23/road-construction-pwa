@@ -19,27 +19,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 16, height: 16, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1]">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', color: 'var(--text)' }}>
+      {/* Desktop */}
       <div className="hidden md:flex">
         <Sidebar user={user} />
-        <main className="flex-1 ml-[220px] min-h-screen">
-          <div className="max-w-[1100px] mx-auto p-6 lg:p-8">{children}</div>
+        <main style={{ marginLeft: 232, flex: 1, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 28px', width: '100%' }}>
+            {children}
+          </div>
         </main>
       </div>
+      {/* Mobile */}
       <div className="md:hidden">
-        <main className="pb-14 min-h-screen">
-          <div className="p-4">{children}</div>
+        <main style={{ paddingBottom: 56, minHeight: '100dvh' }}>
+          <div style={{ padding: '16px' }}>{children}</div>
         </main>
         <BottomNav user={user} />
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
