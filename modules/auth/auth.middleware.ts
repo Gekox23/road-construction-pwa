@@ -3,7 +3,8 @@ import { verifyToken } from './auth.service';
 import type { Permission, SessionUser } from '../../shared/types';
 
 export function getSessionFromRequest(req: NextRequest): SessionUser | null {
-  const cookie = req.cookies.get('auth_token');
+  // FIX: cookie neve 'access_token'
+  const cookie = req.cookies.get('access_token');
   if (!cookie?.value) return null;
   return verifyToken(cookie.value);
 }
