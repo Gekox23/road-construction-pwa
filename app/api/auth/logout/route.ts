@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function POST() {
-  const res = NextResponse.json({ success: true });
-  res.cookies.delete('access_token');
-  res.cookies.delete('refresh_token');
-  return res;
+  const response = NextResponse.json({ message: 'Sikeres kijelentkezés' });
+  response.cookies.set('auth_token', '', { httpOnly: true, maxAge: 0, path: '/' });
+  return response;
 }
