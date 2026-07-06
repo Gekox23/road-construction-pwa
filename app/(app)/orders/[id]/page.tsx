@@ -9,11 +9,25 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   teljesitve: { label: 'Teljesítve', color: 'bg-blue-500/20 text-blue-400' },
 };
 
+interface OrderData {
+  status?: string;
+  event_date?: string;
+  creator_name?: string;
+  notes?: string;
+}
+
+interface OrderItem {
+  id?: string;
+  item_name?: string;
+  quantity?: number;
+  unit?: string;
+}
+
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [order, setOrder] = useState<Record<string, unknown> | null>(null);
-  const [items, setItems] = useState<Record<string, unknown>[]>([]);
+  const [order, setOrder] = useState<OrderData | null>(null);
+  const [items, setItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
@@ -39,7 +53,7 @@ export default function OrderDetailPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!order) return <div className="text-center py-20 text-gray-400">Megrendelés nem található</div>;
 
-  const statusInfo = STATUS_LABELS[order.status as string];
+  const statusInfo = STATUS_LABELS[order.status ?? ''];
 
   return (
     <div>
@@ -47,24 +61,24 @@ export default function OrderDetailPage() {
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-white">Megrendelés</h1>
-          <p className="text-sm text-gray-400">{String(order.event_date).split('T')[0]}{order.creator_name ? ` | ${order.creator_name}` : ''}</p>
+          <p className="text-sm text-gray-400">{String(order.event_date ?? '').split('T')[0]}{order.creator_name ? ` | ${order.creator_name}` : ''}</p>
         </div>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo?.color}`}>{statusInfo?.label}</span>
       </div>
 
       <div className="space-y-2 mb-6">
         {items.map(item => (
-          <div key={item.id as string} className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-3">
-            <p className="text-white">{item.item_name as string}</p>
-            <p className="text-gray-400 text-sm">{item.quantity as number} {item.unit as string || 'db'}</p>
+          <div key={item.id} className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-3">
+            <p className="text-white">{item.item_name}</p>
+            <p className="text-gray-400 text-sm">{item.quantity} {item.unit || 'db'}</p>
           </div>
         ))}
       </div>
 
-      {order.notes && (
+      {!!order.notes && (
         <div className="bg-gray-900 rounded-xl px-4 py-3 mb-6">
           <p className="text-sm text-gray-400 mb-1">Megjegyzés</p>
-          <p className="text-white text-sm">{order.notes as string}</p>
+          <p className="text-white text-sm">{order.notes}</p>
         </div>
       )}
 
