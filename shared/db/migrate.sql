@@ -6,6 +6,9 @@
 -- UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- FIX: pg_trgm extension typeahead/autocomplete kereséshez (specifikáció előírja)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- ================================================================
 -- USERS
 -- ================================================================
@@ -45,40 +48,54 @@ CREATE TABLE IF NOT EXISTS permission_templates (
 
 INSERT INTO permission_templates (name, permissions) VALUES
   ('Építésvezető', ARRAY[
-    'schedule.view','schedule.edit',
-    'machine.view','machine.hour_log','machine.fuel_log',
-    'site.view','site.view_own',
-    'workorder.view','workorder.create',
-    'issue.view','issue.create',
-    'order.view','order.create',
-    'shelf.view','shelf.scan_out','shelf.scan_in'
+    'order.create', 'order.view',
+    'site.view_own',
+    'schedule.view',
+    'machine.view', 'machine.hour_log', 'machine.fuel_log',
+    'site.log_own',
+    'issue.create', 'issue.view',
+    'workorder.view',
+    'notification.receive_order'
   ]),
   ('Logisztikus', ARRAY[
-    'machine.view','machine.hour_log','machine.fuel_log',
-    'site.view',
-    'order.view','order.create','order.approve',
-    'shelf.view','shelf.scan_out','shelf.scan_in','shelf.manage'
+    'order.view', 'order.approve', 'order.edit',
+    'site.view', 'site.create', 'site.edit', 'site.assign_machine', 'site.assign_leader',
+    'machine.view', 'machine.create', 'machine.edit', 'machine.transfer',
+    'machine.hour_log', 'machine.fuel_log',
+    'schedule.view', 'schedule.edit',
+    'shelf.view', 'shelf.export',
+    'notification.receive_order', 'notification.receive_issue'
   ]),
   ('Szervizes', ARRAY[
-    'machine.view','machine.edit','machine.hour_log','machine.fuel_log',
-    'workorder.view','workorder.create','workorder.edit',
-    'issue.view','issue.create','issue.resolve'
+    'machine.view', 'machine.hour_log',
+    'site.view',
+    'workorder.view', 'workorder.create', 'workorder.edit', 'workorder.close',
+    'issue.view', 'issue.create', 'issue.resolve',
+    'shelf.view', 'shelf.scan_out', 'shelf.scan_in',
+    'schedule.view',
+    'notification.receive_service', 'notification.receive_issue'
   ]),
   ('Gazdasági', ARRAY[
-    'finance.view',
-    'order.view','order.approve',
-    'site.view','machine.view'
+    'site.view', 'machine.view', 'order.view',
+    'schedule.view',
+    'workorder.view',
+    'finance.view', 'finance.export',
+    'shelf.view'
   ]),
   ('Teljes hozzáférés', ARRAY[
-    'schedule.view','schedule.edit',
-    'machine.view','machine.create','machine.edit','machine.hour_log','machine.fuel_log',
-    'site.view','site.view_own','site.create','site.edit',
-    'workorder.view','workorder.create','workorder.edit',
-    'issue.view','issue.create','issue.resolve',
-    'order.view','order.create','order.approve',
-    'shelf.view','shelf.scan_out','shelf.scan_in','shelf.manage',
-    'finance.view',
-    'user.view','user.create','user.edit','user.permission_grant'
+    'user.view', 'user.create', 'user.edit', 'user.delete', 'user.permission_grant',
+    'machine.view', 'machine.create', 'machine.edit', 'machine.delete',
+    'machine.transfer', 'machine.fuel_log', 'machine.hour_log',
+    'site.view', 'site.view_own', 'site.create', 'site.edit', 'site.delete',
+    'site.assign_machine', 'site.assign_leader', 'site.log_own',
+    'order.view', 'order.create', 'order.approve', 'order.edit',
+    'schedule.view', 'schedule.edit',
+    'workorder.view', 'workorder.create', 'workorder.edit', 'workorder.edit_any', 'workorder.close',
+    'issue.view', 'issue.create', 'issue.resolve',
+    'shelf.view', 'shelf.scan_out', 'shelf.scan_in', 'shelf.manage', 'shelf.export',
+    'finance.view', 'finance.export',
+    'notification.receive_service', 'notification.receive_order', 'notification.receive_issue',
+    'audit.view'
   ])
 ON CONFLICT (name) DO NOTHING;
 
@@ -131,6 +148,7 @@ CREATE TABLE IF NOT EXISTS site_machines (
 CREATE TABLE IF NOT EXISTS machine_hour_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   machine_id UUID NOT NULL REFERENCES machines(id) ON DELETE CASCADE,
+  site_id UUID REFERENCES sites(id),          -- FIX: melyik építkezésen rögzítve
   event_date DATE NOT NULL,
   hour_value NUMERIC(10,1) NOT NULL,
   photo_url TEXT,
@@ -142,10 +160,25 @@ CREATE TABLE IF NOT EXISTS machine_hour_logs (
 CREATE TABLE IF NOT EXISTS machine_fuel_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   machine_id UUID NOT NULL REFERENCES machines(id) ON DELETE CASCADE,
+  site_id UUID REFERENCES sites(id),          -- FIX: melyik építkezésen rögzítve
   event_date DATE NOT NULL,
   liters NUMERIC(8,2) NOT NULL,
   location TEXT,
   recorded_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- FIX: Gép dokumentumok táblája (állapotfotók, kötelező átadás dokumentáció)
+CREATE TABLE IF NOT EXISTS machine_documents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  machine_id UUID NOT NULL REFERENCES machines(id) ON DELETE CASCADE,
+  site_id UUID REFERENCES sites(id),
+  doc_type TEXT NOT NULL CHECK (doc_type IN ('allapotfoto','uzemora_foto','atadas_foto','egyeb')),
+  photo_url TEXT NOT NULL,
+  notes TEXT,
+  is_transfer_required BOOLEAN NOT NULL DEFAULT FALSE,  -- kötelező átadáskori dokumentáció
+  event_date DATE NOT NULL,
+  uploaded_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -174,6 +207,8 @@ CREATE TABLE IF NOT EXISTS workorders (
   work_type TEXT,
   description TEXT,
   event_date DATE NOT NULL,
+  work_start TIMESTAMPTZ,
+  work_end TIMESTAMPTZ,
   status TEXT NOT NULL DEFAULT 'uj' CHECK (status IN ('uj','folyamatban','befejezve','lezarva')),
   assigned_to UUID REFERENCES users(id),
   created_by UUID REFERENCES users(id),
@@ -182,7 +217,7 @@ CREATE TABLE IF NOT EXISTS workorders (
 );
 
 -- ================================================================
--- ISSUES (Hibabejlentések)
+-- ISSUES (Hibabejelentések)
 -- ================================================================
 CREATE TABLE IF NOT EXISTS issues (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -218,6 +253,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity NUMERIC(10,2) NOT NULL DEFAULT 1,
   unit TEXT,
   unknown_item BOOLEAN NOT NULL DEFAULT FALSE,
+  notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -267,10 +303,19 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- INDEXEK (gyorsabb lekérdezések)
 -- ================================================================
 CREATE INDEX IF NOT EXISTS idx_machines_status ON machines(status);
+CREATE INDEX IF NOT EXISTS idx_machines_type_trgm ON machines USING gin(type gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_machines_code_trgm ON machines USING gin(machine_code gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_machines_event_date ON machine_hour_logs(event_date);
+CREATE INDEX IF NOT EXISTS idx_fuel_event_date ON machine_fuel_logs(event_date);
 CREATE INDEX IF NOT EXISTS idx_schedule_week ON schedule_entries(week_start);
 CREATE INDEX IF NOT EXISTS idx_workorders_status ON workorders(status);
+CREATE INDEX IF NOT EXISTS idx_workorders_event_date ON workorders(event_date);
 CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
+CREATE INDEX IF NOT EXISTS idx_issues_event_date ON issues(event_date);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_shelf_qr ON shelf_items(qr_code);
+CREATE INDEX IF NOT EXISTS idx_shelf_name_trgm ON shelf_items USING gin(name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_machine_docs_machine ON machine_documents(machine_id);
+CREATE INDEX IF NOT EXISTS idx_machine_docs_event_date ON machine_documents(event_date);

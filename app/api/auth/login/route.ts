@@ -13,8 +13,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Hibás email vagy jelszó' }, { status: 401 });
     }
 
-    const response = NextResponse.json({ user: result.user, message: 'Sikeres bejelentkezés' });
+    const response = NextResponse.json({
+      user: result.user,
+      message: 'Sikeres bejelentkezés',
+    });
 
+    // Access token: 15 perc
     response.cookies.set('access_token', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -23,11 +27,12 @@ export async function POST(req: NextRequest) {
       path: '/',
     });
 
+    // FIX: Refresh token: 1 év (365 nap) – session soha ne járjon le az eszközön
     response.cookies.set('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 365,
       path: '/',
     });
 
