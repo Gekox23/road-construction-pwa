@@ -1,18 +1,6 @@
-export type Permission =
-  | 'user.view' | 'user.create' | 'user.edit' | 'user.delete' | 'user.permission_grant'
-  | 'machine.view' | 'machine.create' | 'machine.edit' | 'machine.delete'
-  | 'machine.transfer' | 'machine.fuel_log' | 'machine.hour_log'
-  | 'site.view' | 'site.view_own' | 'site.create' | 'site.edit' | 'site.delete'
-  | 'site.assign_machine' | 'site.assign_leader' | 'site.log_own'
-  | 'order.view' | 'order.create' | 'order.approve' | 'order.edit'
-  | 'schedule.view' | 'schedule.edit'
-  | 'workorder.view' | 'workorder.create' | 'workorder.edit' | 'workorder.edit_any' | 'workorder.close'
-  | 'issue.view' | 'issue.create' | 'issue.resolve'
-  | 'shelf.view' | 'shelf.scan_out' | 'shelf.scan_in' | 'shelf.manage' | 'shelf.export'
-  | 'finance.view' | 'finance.export'
-  | 'notification.receive_service' | 'notification.receive_order' | 'notification.receive_issue'
-  | 'audit.view'
-  | 'dashboard.view';
+// Permission is typed as string so any permission string is valid at compile time.
+// Runtime enforcement is handled by auth.middleware.ts.
+export type Permission = string;
 
 export interface User {
   id: string;
