@@ -8,8 +8,16 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   archivalt: { label: 'Archivált', color: 'bg-gray-500/20 text-gray-400' },
 };
 
+interface SiteRow {
+  id: string;
+  name: string;
+  location?: string;
+  leader_name?: string;
+  status: string;
+}
+
 export default function SitesPage() {
-  const [sites, setSites] = useState<Record<string, unknown>[]>([]);
+  const [sites, setSites] = useState<SiteRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,15 +42,15 @@ export default function SitesPage() {
       ) : (
         <div className="space-y-2">
           {sites.map(s => (
-            <Link key={s.id as string} href={`/sites/${s.id}`}
+            <Link key={s.id} href={`/sites/${s.id}`}
               className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl p-4 transition-colors">
               <div>
-                <p className="font-semibold text-white">{s.name as string}</p>
-                {s.location && <p className="text-sm text-gray-400">{s.location as string}</p>}
-                {s.leader_name && <p className="text-xs text-gray-500 mt-0.5">Vezető: {s.leader_name as string}</p>}
+                <p className="font-semibold text-white">{s.name}</p>
+                {!!s.location && <p className="text-sm text-gray-400">{s.location}</p>}
+                {!!s.leader_name && <p className="text-xs text-gray-500 mt-0.5">Vezető: {s.leader_name}</p>}
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_LABELS[s.status as string]?.color}`}>
-                {STATUS_LABELS[s.status as string]?.label}
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_LABELS[s.status]?.color}`}>
+                {STATUS_LABELS[s.status]?.label}
               </span>
             </Link>
           ))}

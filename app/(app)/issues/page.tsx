@@ -8,8 +8,17 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   megoldott: { label: 'Megoldott', color: 'bg-green-500/20 text-green-400' },
 };
 
+interface IssueRow {
+  id: string;
+  description: string;
+  event_date: string;
+  status: string;
+  machine_type?: string;
+  site_name?: string;
+}
+
 export default function IssuesPage() {
-  const [items, setItems] = useState<Record<string, unknown>[]>([]);
+  const [items, setItems] = useState<IssueRow[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +38,7 @@ export default function IssuesPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        {[['', 'Összes'], ['nyitott', 'Nyitott'], ['folyamatban', 'Folyamatban'], ['megoldott', 'Megoldott']].map(([val, lbl]) => (
+        {([['', 'Összes'], ['nyitott', 'Nyitott'], ['folyamatban', 'Folyamatban'], ['megoldott', 'Megoldott']] as [string, string][]).map(([val, lbl]) => (
           <button key={val} onClick={() => setStatus(val)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               status === val ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
@@ -47,17 +56,17 @@ export default function IssuesPage() {
       ) : (
         <div className="space-y-2">
           {items.map(iss => (
-            <Link key={iss.id as string} href={`/issues/${iss.id}`}
+            <Link key={iss.id} href={`/issues/${iss.id}`}
               className="flex items-start justify-between bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl p-4 transition-colors">
               <div className="flex-1 mr-3">
-                <p className="font-semibold text-white line-clamp-2">{iss.description as string}</p>
+                <p className="font-semibold text-white line-clamp-2">{iss.description}</p>
                 <p className="text-xs text-gray-400 mt-1">{String(iss.event_date).split('T')[0]}
                   {iss.machine_type ? ` | ${iss.machine_type}` : ''}
                   {iss.site_name ? ` | ${iss.site_name}` : ''}
                 </p>
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${STATUS_LABELS[iss.status as string]?.color}`}>
-                {STATUS_LABELS[iss.status as string]?.label}
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${STATUS_LABELS[iss.status]?.color}`}>
+                {STATUS_LABELS[iss.status]?.label}
               </span>
             </Link>
           ))}

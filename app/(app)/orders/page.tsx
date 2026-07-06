@@ -9,8 +9,16 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   teljesitve: { label: 'Teljesítve', color: 'bg-blue-500/20 text-blue-400' },
 };
 
+interface OrderRow {
+  id: string;
+  status: string;
+  event_date: string;
+  creator_name?: string;
+  item_count?: number;
+}
+
 export default function OrdersPage() {
-  const [items, setItems] = useState<Record<string, unknown>[]>([]);
+  const [items, setItems] = useState<OrderRow[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +38,7 @@ export default function OrdersPage() {
       </div>
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-        {[['', 'Összes'], ['fuggoben', 'Függőben'], ['jovahagyva', 'Jóváhagyva'], ['teljesitve', 'Teljesítve']].map(([val, lbl]) => (
+        {([['', 'Összes'], ['fuggoben', 'Függőben'], ['jovahagyva', 'Jóváhagyva'], ['teljesitve', 'Teljesítve']] as [string, string][]).map(([val, lbl]) => (
           <button key={val} onClick={() => setStatus(val)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               status === val ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
@@ -48,17 +56,17 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-2">
           {items.map(o => (
-            <Link key={o.id as string} href={`/orders/${o.id}`}
+            <Link key={o.id} href={`/orders/${o.id}`}
               className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl p-4 transition-colors">
               <div>
                 <p className="font-semibold text-white">
-                  {(o.item_count as number) || 0} tétel
+                  {o.item_count ?? 0} tétel
                   {o.creator_name ? ` | ${o.creator_name}` : ''}
                 </p>
                 <p className="text-sm text-gray-400">{String(o.event_date).split('T')[0]}</p>
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_LABELS[o.status as string]?.color}`}>
-                {STATUS_LABELS[o.status as string]?.label}
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_LABELS[o.status]?.color}`}>
+                {STATUS_LABELS[o.status]?.label}
               </span>
             </Link>
           ))}

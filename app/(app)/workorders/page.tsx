@@ -9,8 +9,16 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   lezarva: { label: 'Lezárva', color: 'bg-gray-500/20 text-gray-400' },
 };
 
+interface WorkOrderRow {
+  id: string;
+  status: string;
+  event_date: string;
+  work_type?: string;
+  machine_type?: string;
+}
+
 export default function WorkordersPage() {
-  const [items, setItems] = useState<Record<string, unknown>[]>([]);
+  const [items, setItems] = useState<WorkOrderRow[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -29,9 +37,8 @@ export default function WorkordersPage() {
         </Link>
       </div>
 
-      {/* Filter */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-        {[['', 'Összes'], ['uj', 'Új'], ['folyamatban', 'Folyamatban'], ['befejezve', 'Befejezve']].map(([val, lbl]) => (
+        {([['', 'Összes'], ['uj', 'Új'], ['folyamatban', 'Folyamatban'], ['befejezve', 'Befejezve']] as [string, string][]).map(([val, lbl]) => (
           <button key={val} onClick={() => setStatus(val)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               status === val ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
@@ -49,16 +56,16 @@ export default function WorkordersPage() {
       ) : (
         <div className="space-y-2">
           {items.map(w => (
-            <Link key={w.id as string} href={`/workorders/${w.id}`}
+            <Link key={w.id} href={`/workorders/${w.id}`}
               className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl p-4 transition-colors">
               <div>
-                <p className="font-semibold text-white">{w.work_type as string || 'Karbantartás'}</p>
+                <p className="font-semibold text-white">{w.work_type || 'Karbantartás'}</p>
                 <p className="text-sm text-gray-400">{String(w.event_date).split('T')[0]}
                   {w.machine_type ? ` | ${w.machine_type}` : ''}
                 </p>
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_LABELS[w.status as string]?.color}`}>
-                {STATUS_LABELS[w.status as string]?.label}
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_LABELS[w.status]?.color}`}>
+                {STATUS_LABELS[w.status]?.label}
               </span>
             </Link>
           ))}
