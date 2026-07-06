@@ -9,12 +9,34 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   inaktiv: { label: 'Inaktív', color: 'bg-gray-500/20 text-gray-400' },
 };
 
+interface MachineData {
+  id?: string;
+  type?: string;
+  machine_code?: string;
+  brand?: string;
+  status?: string;
+  year_of_manufacture?: number;
+  license_plate?: string;
+  site_name?: string;
+}
+
+interface WorkOrderData {
+  id?: string;
+  work_type?: string;
+  event_date?: string;
+}
+
+interface IssueData {
+  id?: string;
+  description?: string;
+}
+
 export default function MachineDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [machine, setMachine] = useState<Record<string, unknown> | null>(null);
-  const [workorders, setWorkorders] = useState<Record<string, unknown>[]>([]);
-  const [openIssues, setOpenIssues] = useState<Record<string, unknown>[]>([]);
+  const [machine, setMachine] = useState<MachineData | null>(null);
+  const [workorders, setWorkorders] = useState<WorkOrderData[]>([]);
+  const [openIssues, setOpenIssues] = useState<IssueData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,37 +55,37 @@ export default function MachineDetailPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!machine) return <div className="text-center py-20 text-gray-400">Gép nem található</div>;
 
-  const statusInfo = STATUS_LABELS[machine.status as string];
+  const statusInfo = STATUS_LABELS[machine.status ?? ''];
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">{machine.type as string}</h1>
-          <p className="text-sm text-gray-400">{machine.machine_code as string}{machine.brand ? ` | ${machine.brand}` : ''}</p>
+          <h1 className="text-xl font-bold text-white">{machine.type}</h1>
+          <p className="text-sm text-gray-400">{machine.machine_code}{machine.brand ? ` | ${machine.brand}` : ''}</p>
         </div>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo?.color}`}>{statusInfo?.label}</span>
         <Link href={`/machines/${id}/edit`} className="h-9 px-3 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-xl flex items-center transition-colors">Szerk.</Link>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-4">
-        {machine.year_of_manufacture && (
+        {!!machine.year_of_manufacture && (
           <div className="bg-gray-900 rounded-xl px-4 py-3">
             <p className="text-xs text-gray-500">Gyártási év</p>
-            <p className="text-white font-semibold">{machine.year_of_manufacture as number}</p>
+            <p className="text-white font-semibold">{machine.year_of_manufacture}</p>
           </div>
         )}
-        {machine.license_plate && (
+        {!!machine.license_plate && (
           <div className="bg-gray-900 rounded-xl px-4 py-3">
             <p className="text-xs text-gray-500">Rendszám</p>
-            <p className="text-white font-semibold">{machine.license_plate as string}</p>
+            <p className="text-white font-semibold">{machine.license_plate}</p>
           </div>
         )}
-        {machine.site_name && (
+        {!!machine.site_name && (
           <div className="bg-gray-900 rounded-xl px-4 py-3 col-span-2">
             <p className="text-xs text-gray-500">Jelenlegi helyszín</p>
-            <p className="text-white font-semibold">{machine.site_name as string}</p>
+            <p className="text-white font-semibold">{machine.site_name}</p>
           </div>
         )}
       </div>
@@ -72,8 +94,8 @@ export default function MachineDetailPage() {
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
           <p className="text-red-400 text-sm font-medium mb-2">⚠ Nyitott hibák ({openIssues.length})</p>
           {openIssues.map(iss => (
-            <Link key={iss.id as string} href={`/issues/${iss.id}`} className="block text-xs text-red-300 hover:text-red-200 mb-1">
-              • {String(iss.description).substring(0, 60)}...
+            <Link key={iss.id} href={`/issues/${iss.id}`} className="block text-xs text-red-300 hover:text-red-200 mb-1">
+              • {String(iss.description ?? '').substring(0, 60)}...
             </Link>
           ))}
         </div>
@@ -89,11 +111,11 @@ export default function MachineDetailPage() {
         ) : (
           <div className="space-y-2">
             {workorders.map(w => (
-              <Link key={w.id as string} href={`/workorders/${w.id}`}
+              <Link key={w.id} href={`/workorders/${w.id}`}
                 className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 rounded-xl px-4 py-3 transition-colors">
                 <div>
-                  <p className="text-white text-sm">{w.work_type as string || 'Karbantartás'}</p>
-                  <p className="text-xs text-gray-500">{String(w.event_date).split('T')[0]}</p>
+                  <p className="text-white text-sm">{w.work_type || 'Karbantartás'}</p>
+                  <p className="text-xs text-gray-500">{String(w.event_date ?? '').split('T')[0]}</p>
                 </div>
                 <span className="text-xs text-gray-400">→</span>
               </Link>
