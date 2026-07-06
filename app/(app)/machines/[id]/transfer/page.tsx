@@ -4,11 +4,17 @@ import { useParams, useRouter } from 'next/navigation';
 
 interface Site { id: string; name: string; location?: string; }
 interface User { id: string; name: string; }
+interface MachineData {
+  machine_code?: string;
+  type?: string;
+  current_site_id?: string;
+  site_name?: string;
+}
 
 export default function MachineTransferPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [machine, setMachine] = useState<Record<string, unknown> | null>(null);
+  const [machine, setMachine] = useState<MachineData | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [form, setForm] = useState({ targetSiteId: '', operatorId: '', notes: '' });
@@ -55,13 +61,13 @@ export default function MachineTransferPage() {
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
         <div>
           <h1 className="text-xl font-bold text-white">Gép átadása</h1>
-          <p className="text-sm text-gray-400">{machine?.machine_code as string} | {machine?.type as string}</p>
+          <p className="text-sm text-gray-400">{machine?.machine_code} | {machine?.type}</p>
         </div>
       </div>
 
-      {machine?.current_site_id && (
+      {!!machine?.current_site_id && (
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-sm text-yellow-300">
-          Jelenlegi helyszín: <strong>{machine?.site_name as string || 'Építkezés'}</strong>
+          Jelenlegi helyszín: <strong>{machine?.site_name || 'Építkezés'}</strong>
         </div>
       )}
 
@@ -75,7 +81,7 @@ export default function MachineTransferPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Operatőr (opcionális)</label>
+          <label className="block text-sm text-gray-400 mb-1">Operátor (opcionális)</label>
           <select value={form.operatorId} onChange={e => setForm(p => ({ ...p, operatorId: e.target.value }))}
             className="w-full h-11 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
             <option value="">-</option>

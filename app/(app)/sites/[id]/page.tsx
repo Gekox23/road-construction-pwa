@@ -9,11 +9,25 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   archivalt: { label: 'Archivált', color: 'bg-gray-500/20 text-gray-400' },
 };
 
+interface SiteData {
+  id?: string;
+  name?: string;
+  location?: string;
+  status?: string;
+  leader_name?: string;
+}
+
+interface MachineData {
+  id?: string;
+  type?: string;
+  machine_code?: string;
+}
+
 export default function SiteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [site, setSite] = useState<Record<string, unknown> | null>(null);
-  const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
+  const [site, setSite] = useState<SiteData | null>(null);
+  const [machines, setMachines] = useState<MachineData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,24 +44,24 @@ export default function SiteDetailPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!site) return <div className="text-center py-20 text-gray-400">Építkezés nem található</div>;
 
-  const statusInfo = STATUS_LABELS[site.status as string];
+  const statusInfo = STATUS_LABELS[site.status ?? ''];
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">{site.name as string}</h1>
-          {site.location && <p className="text-sm text-gray-400">{site.location as string}</p>}
+          <h1 className="text-xl font-bold text-white">{site.name}</h1>
+          {!!site.location && <p className="text-sm text-gray-400">{site.location}</p>}
         </div>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo?.color}`}>{statusInfo?.label}</span>
         <Link href={`/sites/${id}/edit`} className="h-9 px-3 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-xl flex items-center transition-colors">Szerk.</Link>
       </div>
 
-      {site.leader_name && (
+      {!!site.leader_name && (
         <div className="bg-gray-900 rounded-xl px-4 py-3 mb-4 flex justify-between">
           <span className="text-gray-400 text-sm">Vezérő</span>
-          <span className="text-white text-sm font-medium">{site.leader_name as string}</span>
+          <span className="text-white text-sm font-medium">{site.leader_name}</span>
         </div>
       )}
 
@@ -60,11 +74,11 @@ export default function SiteDetailPage() {
         ) : (
           <div className="space-y-2">
             {machines.map(m => (
-              <Link key={m.id as string} href={`/machines/${m.id}`}
+              <Link key={m.id} href={`/machines/${m.id}`}
                 className="flex items-center justify-between bg-gray-900 hover:bg-gray-800 rounded-xl px-4 py-3 transition-colors">
                 <div>
-                  <p className="text-white text-sm font-medium">{m.type as string}</p>
-                  <p className="text-xs text-gray-500">{m.machine_code as string}</p>
+                  <p className="text-white text-sm font-medium">{m.type}</p>
+                  <p className="text-xs text-gray-500">{m.machine_code}</p>
                 </div>
                 <span className="text-xs text-gray-400">→</span>
               </Link>

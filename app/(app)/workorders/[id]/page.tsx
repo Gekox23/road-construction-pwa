@@ -9,10 +9,20 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   lezarva: { label: 'Lezárva', color: 'bg-gray-500/20 text-gray-400' },
 };
 
+interface WorkOrderData {
+  status?: string;
+  work_type?: string;
+  event_date?: string;
+  machine_type?: string;
+  machine_code?: string;
+  description?: string;
+  assigned_name?: string;
+}
+
 export default function WorkorderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [wo, setWo] = useState<Record<string, unknown> | null>(null);
+  const [wo, setWo] = useState<WorkOrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
@@ -35,41 +45,40 @@ export default function WorkorderDetailPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!wo) return <div className="text-center py-20 text-gray-400">Munkalap nem található</div>;
 
-  const statusInfo = STATUS_LABELS[wo.status as string];
+  const statusInfo = STATUS_LABELS[wo.status ?? ''];
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">{wo.work_type as string || 'Munkalap'}</h1>
-          <p className="text-sm text-gray-400">{String(wo.event_date).split('T')[0]}</p>
+          <h1 className="text-xl font-bold text-white">{wo.work_type || 'Munkalap'}</h1>
+          <p className="text-sm text-gray-400">{String(wo.event_date ?? '').split('T')[0]}</p>
         </div>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo?.color}`}>{statusInfo?.label}</span>
       </div>
 
       <div className="space-y-3 mb-6">
-        {wo.machine_type && (
+        {!!wo.machine_type && (
           <div className="flex justify-between bg-gray-900 rounded-xl px-4 py-3">
             <span className="text-gray-400 text-sm">Gép</span>
-            <span className="text-white text-sm">{wo.machine_type as string} ({wo.machine_code as string})</span>
+            <span className="text-white text-sm">{wo.machine_type} ({wo.machine_code})</span>
           </div>
         )}
-        {wo.description && (
+        {!!wo.description && (
           <div className="bg-gray-900 rounded-xl px-4 py-3">
             <p className="text-gray-400 text-sm mb-1">Leírás</p>
-            <p className="text-white text-sm">{wo.description as string}</p>
+            <p className="text-white text-sm">{wo.description}</p>
           </div>
         )}
-        {wo.assigned_name && (
+        {!!wo.assigned_name && (
           <div className="flex justify-between bg-gray-900 rounded-xl px-4 py-3">
             <span className="text-gray-400 text-sm">Szervizes</span>
-            <span className="text-white text-sm">{wo.assigned_name as string}</span>
+            <span className="text-white text-sm">{wo.assigned_name}</span>
           </div>
         )}
       </div>
 
-      {/* Státusz váltás */}
       {wo.status !== 'lezarva' && (
         <div className="space-y-2">
           <p className="text-sm text-gray-400 mb-2">Státusz váltás:</p>
@@ -85,7 +94,7 @@ export default function WorkorderDetailPage() {
               Munka befejezése ✓
             </button>
           )}
-          {(wo.status === 'befejezve') && (
+          {wo.status === 'befejezve' && (
             <button onClick={() => changeStatus('lezarva')} disabled={updating}
               className="w-full h-11 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
               Munkalap lezárása
