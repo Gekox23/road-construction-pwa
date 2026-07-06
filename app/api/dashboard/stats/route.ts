@@ -3,25 +3,26 @@ import { requireAuth } from '../../../../modules/auth/auth.middleware';
 import db from '../../../../shared/db/client';
 
 export async function GET(req: NextRequest) {
-  const auth = requireAuth(req);
+  const auth = requireAuth(req, 'dashboard.view');
   if (auth instanceof NextResponse) return auth;
-  try {
-    const [machines, sites, workorders, issues] = await Promise.all([
-      db.query(`SELECT COUNT(*) FROM machines WHERE status != 'archivalt'`),
-      db.query(`SELECT COUNT(*) FROM sites WHERE status = 'aktiv'`),
-      db.query(`SELECT COUNT(*) FROM workorders WHERE status IN ('uj','folyamatban')`),
-      db.query(`SELECT COUNT(*) FROM issues WHERE status IN ('nyitott','folyamatban')`),
-    ]);
-    return NextResponse.json({
-      data: {
-        machines: parseInt(String(machines.rows[0].count), 10),
-        activeSites: parseInt(String(sites.rows[0].count), 10),
-        openWorkorders: parseInt(String(workorders.rows[0].count), 10),
-        openIssues: parseInt(String(issues.rows[0].count), 10),
-      },
-    });
-  } catch (err) {
-    console.error('[dashboard.stats] Hiba:', err);
-    return NextResponse.json({ error: 'Statisztika lekérdezés sikertelen' }, { status: 500 });
-  }
+
+  const [machines, sites, issues, workorders, orders] = await Promise.all([
+    db.query(`SELECT
+      COUNT(*) as total,
+      COUNT(*) FILTER (WHERE status='aktiv') as aktiv,
+      COUNT(*) FILTER (WHERE status='szervizen') as szervizen
+      FROM machines`),
+    db.query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status='aktiv') as aktiv FROM sites`),
+    db.query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status='nyitott') as nyitott FROM issues`),
+    db.query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status IN ('uj','folyamatban')) as aktiv FROM workorders`),
+    db.query(`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status='fuggoben') as fuggoben FROM orders`),
+  ]);
+
+  return NextResponse.json({
+    machines: machines.rows[0],
+    sites: sites.rows[0],
+    issues: issues.rows[0],
+    workorders: workorders.rows[0],
+    orders: orders.rows[0],
+  });
 }

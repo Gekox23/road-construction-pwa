@@ -2,31 +2,39 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
-const STATUS_OPTIONS = [
-  { value: 'raktaron', label: 'Raktáron' },
-  { value: 'epitkezesen', label: 'Építkezésen' },
-  { value: 'szervizben', label: 'Szervizben' },
-  { value: 'atadasalatt', label: 'Átadás alatt' },
-  { value: 'archivalt', label: 'Archivált' },
-];
-
-export default function EditMachinePage() {
+export default function MachineEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [form, setForm] = useState({ type: '', manufacturer: '', model: '', year: '', notes: '', status: '' });
+  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const [form, setForm] = useState({
+    type: '', machineCode: '', brand: '', yearOfManufacture: '', licensePlate: '', currentSiteId: '', operatorId: '', status: 'aktiv',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`/api/machines/${id}`).then(r => r.json()).then(d => {
-      const m = d.data;
-      if (m) setForm({ type: m.type || '', manufacturer: m.manufacturer || '', model: m.model || '', year: m.year ? String(m.year) : '', notes: m.notes || '', status: m.status || 'raktaron' });
+    Promise.all([
+      fetch(`/api/machines/${id}`).then(r => r.json()),
+      fetch('/api/sites').then(r => r.json()),
+      fetch('/api/users').then(r => r.json()),
+    ]).then(([m, s, u]) => {
+      const d = m.data || {};
+      setForm({
+        type: d.type || '',
+        machineCode: d.machine_code || '',
+        brand: d.brand || '',
+        yearOfManufacture: d.year_of_manufacture ? String(d.year_of_manufacture) : '',
+        licensePlate: d.license_plate || '',
+        currentSiteId: d.current_site_id || '',
+        operatorId: d.operator_id || '',
+        status: d.status || 'aktiv',
+      });
+      setSites(s.data || []);
+      setUsers(u.data || []);
     }).finally(() => setLoading(false));
   }, [id]);
-
-  const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,16 +43,12 @@ export default function EditMachinePage() {
       const res = await fetch(`/api/machines/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, year: form.year ? parseInt(form.year) : null }),
+        body: JSON.stringify(form),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Hiba');
       router.push(`/machines/${id}`);
-    } catch (err: unknown) {
-      setError((err as Error).message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (err: unknown) { setError((err as Error).message); } finally { setSaving(false); }
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
@@ -55,36 +59,49 @@ export default function EditMachinePage() {
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
         <h1 className="text-xl font-bold text-white">Gép szerkesztése</h1>
       </div>
-
       <form onSubmit={submit} className="space-y-4">
-        {[
-          { name: 'type', label: 'Típus *', required: true },
-          { name: 'manufacturer', label: 'Gyártó' },
-          { name: 'model', label: 'Modell' },
-          { name: 'year', label: 'Évjárat', type: 'number' },
-        ].map(f => (
-          <div key={f.name}>
-            <label className="block text-sm text-gray-400 mb-1">{f.label}</label>
-            <input name={f.name} type={f.type || 'text'} value={form[f.name as keyof typeof form]} onChange={handle} required={f.required}
+        {[['type', 'Típus *'], ['machineCode', 'Gépazonosító *'], ['brand', 'Márka'], ['licensePlate', 'Rendszám']].map(([field, label]) => (
+          <div key={field}>
+            <label className="block text-sm text-gray-400 mb-1">{label}</label>
+            <input value={form[field as keyof typeof form]} onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
               className="w-full h-11 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         ))}
         <div>
+          <label className="block text-sm text-gray-400 mb-1">Gyártási év</label>
+          <input type="number" value={form.yearOfManufacture} onChange={e => setForm(p => ({ ...p, yearOfManufacture: e.target.value }))}
+            min="1980" max="2030"
+            className="w-full h-11 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
           <label className="block text-sm text-gray-400 mb-1">Státusz</label>
-          <select name="status" value={form.status} onChange={handle}
+          <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
             className="w-full h-11 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
-            {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <option value="aktiv">Aktív</option>
+            <option value="szervizen">Szervizen</option>
+            <option value="inaktiv">Inaktív</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Megjegyzés</label>
-          <textarea name="notes" value={form.notes} onChange={handle} rows={3}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none" />
+          <label className="block text-sm text-gray-400 mb-1">Jelenlegi helyszín</label>
+          <select value={form.currentSiteId} onChange={e => setForm(p => ({ ...p, currentSiteId: e.target.value }))}
+            className="w-full h-11 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <option value="">-</option>
+            {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Operátor</label>
+          <select value={form.operatorId} onChange={e => setForm(p => ({ ...p, operatorId: e.target.value }))}
+            className="w-full h-11 px-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <option value="">-</option>
+            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
         </div>
         {error && <p className="text-red-400 text-sm">{error}</p>}
         <button type="submit" disabled={saving}
           className="w-full h-12 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors">
-          {saving ? 'Mentés...' : 'Mentés'}
+          {saving ? 'Mentés...' : 'Változtatások mentése'}
         </button>
       </form>
     </div>
