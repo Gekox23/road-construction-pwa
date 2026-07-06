@@ -11,7 +11,8 @@ export type Permission =
   | 'shelf.view' | 'shelf.scan_out' | 'shelf.scan_in' | 'shelf.manage' | 'shelf.export'
   | 'finance.view' | 'finance.export'
   | 'notification.receive_service' | 'notification.receive_order' | 'notification.receive_issue'
-  | 'audit.view';
+  | 'audit.view'
+  | 'dashboard.view';
 
 export interface User {
   id: string;
